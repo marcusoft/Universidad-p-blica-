@@ -3,20 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Marco Personalizado con Logo UNaM</title>
+    <title>Generador de Marco UNaM</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f9; padding: 20px; }
-        .canvas-container { border: 2px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
-        button, label { padding: 10px 20px; background: #016f49; /* Color verde UNaM */ color: white; border: none; border-radius: 5px; cursor: pointer; }
-        input[type="file"] { display: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; color: #333; }
+        h1 { color: #016f49; margin-bottom: 10px; }
+        p { margin-bottom: 20px; text-align: center; max-width: 600px; }
+        .canvas-container { border: 5px solid #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 20px; background-color: #ddd; }
+        .controls { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+        button, label { padding: 12px 24px; background: #016f49; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button:hover, label:hover { background: #014d33; }
         #download { background: #28a745; }
+        #download:hover { background: #1e7e34; }
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-    <h1>Generador de Marco: Tu Foto + UNaM</h1>
+    <h1>Generador de Marco Personalizado</h1>
+    <p>Seleccioná tu foto, acomodala con el mouse o los dedos y descargá tu avatar con el logo de la Universidad Nacional de Misiones.</p>
     
     <div class="canvas-container">
         <canvas id="canvas" width="500" height="500"></canvas>
@@ -30,71 +35,41 @@
 
     <script>
         const canvas = new fabric.Canvas('canvas');
-        const marcoURL = 'URL_DE_TU_MARCO_PNG_AQUI'; // Reemplaza con la URL de tu marco transparente
-        const logoUnamURL = 'https://www.unam.edu.ar/images/documentos/extension/logosunam/01_UNaM_Version_Horizontal_color.png'; // Logo oficial UNaM
+        
+        // --- CONFIGURACIÓN DE IMÁGENES ---
+        // 1. URL del Marco (Debe ser PNG con centro transparente)
+        const marcoURL = 'https://sudhurok.github.io/reloj-ley-universitaria/marco.png'; 
+        
+        // 2. URL del Logo UNaM
+        const logoUnamURL = 'https://www.unam.edu.ar/images/documentos/extension/logosunam/01_UNaM_Version_Horizontal_color.png';
 
-        // 1. Cargar el marco (siempre arriba)
-        fabric.Image.fromURL(marcoURL, function(img) {
-            if (!img) { console.error('No se pudo cargar el marco. Verifica la URL.'); return; }
-            img.set({
-                scaleX: canvas.width / img.width,
-                scaleY: canvas.height / img.height,
-                selectable: false,
-                evented: false
-            });
-            canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
-        });
-
-        // 2. Cargar el logo de la UNaM (se superpone al marco)
-        fabric.Image.fromURL(logoUnamURL, function(logo) {
-            if (!logo) { console.error('No se pudo cargar el logo de la UNaM.'); return; }
-            const scale = 0.25; // Escala el logo al 25% de su tamaño original
-            logo.set({
-                scaleX: scale,
-                scaleY: scale,
-                left: 10, // Distancia desde la izquierda
-                top: 10,  // Distancia desde arriba
-                selectable: false, // El logo no se puede mover
-                evented: false     // No interactúa
-            });
-            canvas.add(logo);
-        });
-
-        // 3. Subir y acomodar la foto
-        document.getElementById('upload').onchange = function(e) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const imgObj = new Image();
-                imgObj.src = event.target.result;
-                imgObj.onload = function() {
-                    const image = new fabric.Image(imgObj);
-                    image.set({
-                        left: (canvas.width / 2) - 150, // Centrar inicialmente
-                        top: (canvas.height / 2) - 150,
-                        angle: 0,
-                        padding: 10,
-                        cornersize: 10,
-                        hasRotatingPoint: true
+        // FUNCIÓN PARA CARGAR EL MARCO Y EL LOGO AL INICIO
+        function inicializarDiseño() {
+            // Cargar el Marco
+            fabric.Image.fromURL(marcoURL, function(img) {
+                if(img) {
+                    img.set({
+                        scaleX: canvas.width / img.width,
+                        scaleY: canvas.height / img.height,
+                        selectable: false,
+                        evented: false,
+                        originX: 'left',
+                        originY: 'top'
                     });
-                    image.scaleToWidth(300);
-                    canvas.add(image);
-                    canvas.sendToBack(image); // La foto va detrás del marco y el logo
-                };
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        };
+                    canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
+                }
+            }, { crossOrigin: 'anonymous' });
 
-        // 4. Descargar el resultado
-        document.getElementById('download').onclick = function() {
-            const dataURL = canvas.toDataURL({
-                format: 'png',
-                quality: 1
-            });
-            const link = document.createElement('a');
-            link.download = 'mi-avatar-unam.png';
-            link.href = dataURL;
-            link.click();
-        };
-    </script>
-</body>
-</html>
+            // Cargar el Logo UNaM
+            fabric.Image.fromURL(logoUnamURL, function(logo) {
+                if(logo) {
+                    const scale = 0.25; 
+                    logo.set({
+                        scaleX: scale,
+                        scaleY: scale,
+                        left: 20, 
+                        top: 20,
+                        selectable: false,
+                        evented: false
+                    });
+                    canvas.add(logo);
