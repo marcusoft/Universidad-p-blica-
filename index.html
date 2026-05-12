@@ -3,73 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Marco UNaM</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <title>Generador de Avatar | UNaM</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; padding: 20px; color: #333; }
-        h1 { color: #016f49; margin-bottom: 10px; }
-        p { margin-bottom: 20px; text-align: center; max-width: 600px; }
-        .canvas-container { border: 5px solid #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); margin-bottom: 20px; background-color: #ddd; }
-        .controls { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-        button, label { padding: 12px 24px; background: #016f49; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
-        button:hover, label:hover { background: #014d33; }
-        #download { background: #28a745; }
-        #download:hover { background: #1e7e34; }
+        :root {
+            --primary-blue: #1a4a7c;
+            --accent-color: #0056b3;
+            --bg-gray: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-gray);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border-top: 10px solid var(--primary-blue);
+        }
+
+        h1 { color: var(--primary-blue); margin-bottom: 10px; font-size: 24px; }
+        p { color: #666; margin-bottom: 25px; }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
+            aspect-ratio: 1 / 1;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px dashed #ccc;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
         input[type="file"] { display: none; }
+
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        .btn-upload {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-download {
+            background-color: #28a745;
+            color: white;
+            display: none;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
     </style>
 </head>
 <body>
 
-    <h1>Generador de Marco Personalizado</h1>
-    <p>Seleccioná tu foto, acomodala con el mouse o los dedos y descargá tu avatar con el logo de la Universidad Nacional de Misiones.</p>
-    
-    <div class="canvas-container">
-        <canvas id="canvas" width="500" height="500"></canvas>
-    </div>
+    <div class="container">
+        <h1>Generador de Avatar</h1>
+        <p>Subí tu foto para aplicar el marco de la <strong>Lista 2</strong></p>
 
-    <div class="controls">
-        <label for="upload">1. Elegir mi Foto</label>
-        <input type="file" id="upload" accept="image/*">
-        <button id="download">2. Descargar mi Avatar</button>
+        <div id="canvas-container">
+            <canvas id="avatarCanvas"></canvas>
+        </div>
+
+        <div class="controls">
+            <label for="upload" class="btn btn-upload">Seleccionar mi foto</label>
+            <input type="file" id="upload" accept="image/*">
+            
+            <button id="download" class="btn btn-download">Descargar Avatar</button>
+        </div>
     </div>
 
     <script>
-        const canvas = new fabric.Canvas('canvas');
-        
-        // --- CONFIGURACIÓN DE IMÁGENES ---
-        // 1. URL del Marco (Debe ser PNG con centro transparente)
-        const marcoURL = 'https://sudhurok.github.io/reloj-ley-universitaria/marco.png'; 
-        
-        // 2. URL del Logo UNaM
-        const logoUnamURL = 'https://www.unam.edu.ar/images/documentos/extension/logosunam/01_UNaM_Version_Horizontal_color.png';
+        const canvas = document.getElementById('avatarCanvas');
+        const ctx = canvas.getContext('2d');
+        const upload = document.getElementById('upload');
+        const downloadBtn = document.getElementById('download');
 
-        // FUNCIÓN PARA CARGAR EL MARCO Y EL LOGO AL INICIO
-        function inicializarDiseño() {
-            // Cargar el Marco
-            fabric.Image.fromURL(marcoURL, function(img) {
-                if(img) {
-                    img.set({
-                        scaleX: canvas.width / img.width,
-                        scaleY: canvas.height / img.height,
-                        selectable: false,
-                        evented: false,
-                        originX: 'left',
-                        originY: 'top'
-                    });
-                    canvas.setOverlayImage(img, canvas.renderAll.bind(canvas));
-                }
-            }, { crossOrigin: 'anonymous' });
+        // --- CONFIGURACIÓN DEL MARCO ---
+        // Reemplazá 'marco.png' por la URL o nombre de tu archivo de marco transparente
+        const frameImg = new Image();
+        frameImg.src = 'marco.png'; 
 
-            // Cargar el Logo UNaM
-            fabric.Image.fromURL(logoUnamURL, function(logo) {
-                if(logo) {
-                    const scale = 0.25; 
-                    logo.set({
-                        scaleX: scale,
-                        scaleY: scale,
-                        left: 20, 
-                        top: 20,
-                        selectable: false,
-                        evented: false
-                    });
-                    canvas.add(logo);
+        // Definimos tamaño estándar (1080x1080 para buena calidad)
+        canvas.width = 1080;
+        canvas.height = 1080;
+
+        // Dibujar marco inicialmente cuando cargue
+        frameImg.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+        };
+
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const userImg = new Image();
+                userImg.onload = () => {
+                    // Limpiar canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Calcular proporciones para cubrir el fondo (Object-fit cover)
+                    const scale = Math.max(canvas.width / userImg.width, canvas.height / userImg.height);
+                    const x = (canvas.width / 2) - (userImg.width / 2) * scale;
+                    const y = (canvas.height / 2) - (userImg.height / 2) * scale;
+
+                    // 1. Dibujar la foto del usuario de fondo
+                    ctx.drawImage(userImg, x, y, userImg.width * scale, userImg.height * scale);
+
+                    // 2. Dibujar el marco encima
+                    ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+
+                    // Mostrar botón de descarga
+                    downloadBtn.style.display = 'block';
+                };
+                userImg.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'mi-avatar-lista2.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
